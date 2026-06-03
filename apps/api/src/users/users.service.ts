@@ -1,37 +1,34 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-}
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  private readonly users: User[] = [];
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepo: Repository<User>,
+  ) {}
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
-    if (this.users.find((u) => u.email === dto.email)) {
-      throw new ConflictException('Email already in use');
-    }
+    const existing = await this.usersRepo.findOneBy({ email: dto.email });
+    if (existing) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user: User = {
-      id: crypto.randomUUID(),
+    const user = this.usersRepo.create({
       name: dto.name,
       email: dto.email,
       password: hashed,
-    };
-    this.users.push(user);
+    });
+    const saved = await this.usersRepo.save(user);
 
-    return { id: user.id, name: user.name, email: user.email };
+    return { id: saved.id, name: saved.name, email: saved.email };
   }
 
-  findByEmail(email: string): User | undefined {
-    return this.users.find((u) => u.email === email);
+  findByEmail(email: string): Promise<User | null> {
+    return this.usersRepo.findOneBy({ email });
   }
 }

@@ -14,6 +14,8 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({ origin: process.env.CORS_ORIGIN ?? '*' });
+
   const config = new DocumentBuilder()
     .setTitle('Code Connect API')
     .setDescription('Authentication API')
