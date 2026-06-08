@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api, isAxiosError } from '../../../services/api'
+import { useAuth } from '../../../contexts/AuthContext'
 import { Divider } from '../../atoms/Divider/Divider'
 import { SocialLoginRow } from '../../molecules/SocialLoginRow/SocialLoginRow'
 import { AuthFooter } from '../../organisms/AuthFooter/AuthFooter'
@@ -12,6 +13,7 @@ const SOCIAL_PROVIDERS = [
 ]
 
 export function LoginPage() {
+  const { login } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,9 +30,8 @@ export function LoginPage() {
         password: values.password,
       })
       const user = await api.getMe(access_token)
-      localStorage.setItem('token', access_token)
-      localStorage.setItem('code_connect_user', JSON.stringify(user))
-      window.location.hash = '#/home'
+      login(access_token, user)
+      window.location.hash = '#/feed'
     } catch (err) {
       setError(
         isAxiosError(err) && err.response?.status === 401

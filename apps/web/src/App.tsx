@@ -1,39 +1,34 @@
 import { useSyncExternalStore } from 'react'
-import { HomePage } from './components/pages/HomePage/HomePage'
+import { AuthProvider } from './contexts/AuthContext'
+import { FeedPage } from './components/pages/FeedPage/FeedPage'
 import { LoginPage } from './components/pages/LoginPage/LoginPage'
+import { PostDetailPage } from './components/pages/PostDetailPage/PostDetailPage'
 import { SignupPage } from './components/pages/SignupPage/SignupPage'
-import type { UserResponse } from './services/api'
 
 function subscribe(callback: () => void) {
   window.addEventListener('hashchange', callback)
   return () => window.removeEventListener('hashchange', callback)
 }
 
-function getStoredUser(): UserResponse | null {
-  try {
-    const raw = localStorage.getItem('code_connect_user')
-    return raw ? (JSON.parse(raw) as UserResponse) : null
-  } catch {
-    return null
-  }
-}
-
-export default function App() {
+function Router() {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
-
-  function handleLogout() {
-    localStorage.removeItem('token')
-    localStorage.removeItem('code_connect_user')
-    window.location.hash = '#/'
-  }
-
-  if (hash === '#/home') {
-    const user = getStoredUser()
-    if (user) return <HomePage user={user} onLogout={handleLogout} />
-    window.location.hash = '#/'
-  }
 
   if (hash === '#/cadastro') return <SignupPage />
 
+  if (hash.startsWith('#/post/')) {
+    const postId = hash.slice('#/post/'.length)
+    return <PostDetailPage postId={postId} />
+  }
+
+  if (hash === '#/feed' || hash === '#/home') return <FeedPage />
+
   return <LoginPage />
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router />
+    </AuthProvider>
+  )
 }
